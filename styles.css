@@ -79,7 +79,37 @@ body {
     text-align: center;
     margin-bottom: 10px;
     border-radius: 4px;
-}
+    transition: border-color 0.3s ease-in-out;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .drop-zone:hover {
+    background-color: #f0f8ff;
+  }
+
+  .drop-zone.dragover {
+    border-color: #007BFF;
+    background-color: #f0f8ff;
+  }
+  
+  .drop-zone span {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .drop-zone button {
+    background: none;
+    border: none;
+    color: #007BFF;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  
+  .drop-zone button:hover {
+    color: #0056b3;
+  }
+  
 
 textarea {
     width: 100%;

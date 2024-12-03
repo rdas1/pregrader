@@ -20,16 +20,16 @@
       <!-- Requirements View -->
       <div id="requirements-view" class="view active">
         <h2>Progress Report</h2>
-        <p>Upload your assignment instructions to get started.</p>
+        <h4>Upload your assignment instructions to get started.</h4>
         <div class="upload-area">
-          <!-- Drop Zone for File Upload -->
-          <div class="drop-zone">
-            <label for="file-input" class="browse">Drop your files or <span>Browse files</span></label>
-            <input type="file" id="fileInput" hidden />
-          </div>
+            <!-- Drop Zone for File Upload -->
+            <div id="drop-zone" class="drop-zone">
+              <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
+              <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+            </div>
             <textarea class="paste-zone" placeholder="Or, paste your assignment instructions here..." class="text-input"></textarea>
-          <button id="upload-button" disabled>Upload</button>
-        </div>
+            <button id="upload-button" disabled>Upload</button>
+          </div>
       </div>
 
       <!-- Checklist View -->
