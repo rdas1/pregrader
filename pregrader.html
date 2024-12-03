@@ -1,6 +1,56 @@
-<html>
-  <body>
-    <h1>Hello Extensions</h1>
-    <script src="popup.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pregrader Chrome Extension</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="extension-container">
+    <!-- Top Tab Selector -->
+    <div id="tab-selector">
+      <button id="requirements-tab" class="tab active">Requirements</button>
+      <button id="checklist-tab" class="tab" disabled>Checklist</button>
+      <button id="final-checklist-tab" class="tab" disabled>Final Checklist</button>
+    </div>
+
+    <!-- Content Area -->
+    <div id="content">
+      <!-- Requirements View -->
+      <div id="requirements-view" class="view active">
+        <h2>Progress Report</h2>
+        <p>Upload your assignment instructions to get started.</p>
+        <div class="upload-area">
+          <!-- Drop Zone for File Upload -->
+          <div class="drop-zone">
+            <label for="file-input" class="browse">Drop your files or <span>Browse files</span></label>
+            <input type="file" id="fileInput" hidden />
+          </div>
+            <textarea class="paste-zone" placeholder="Or, paste your assignment instructions here..." class="text-input"></textarea>
+          <button id="upload-button" disabled>Upload</button>
+        </div>
+      </div>
+
+      <!-- Checklist View -->
+      <div id="checklist-view" class="view">
+        <h2>Progress Report</h2>
+        <p>Overall Progress: <strong id="progress-percentage">0%</strong> of requirements met.</p>
+        <div id="section-checklist">
+          <!-- Progress bar placeholder -->
+        </div>
+      </div>
+
+      <!-- Final Checklist View -->
+      <div id="final-checklist-view" class="view">
+        <h2>Final Checklist</h2>
+        <p>Verify that all requirements are completed before submission.</p>
+        <div id="final-review">
+          <!-- Checklist verification items -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
 </html>
