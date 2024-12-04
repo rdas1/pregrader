@@ -1,3 +1,33 @@
+// Set the workerSrc to the web-accessible resource
+pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("libs/pdf.worker.min.js");
+
+// Function to load and extract text from a PDF
+async function loadAndExtractPDF(pdfPath) {
+  try {
+    // Fetch the PDF file (replace with your own PDF path if testing locally)
+    const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+    console.log(`PDF loaded: ${pdf.numPages} pages`);
+
+    let pdfText = "";
+
+    // Loop through each page and extract text
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      // Combine the text from the page
+      const pageText = textContent.items.map((item) => item.str).join(" ");
+      pdfText += `Page ${pageNum}:\n${pageText}\n\n`;
+    }
+
+    console.log("Extracted Text:\n", pdfText);
+    return pdfText;
+  } catch (error) {
+    console.error("Error loading or extracting PDF:", error);
+  }
+}
+
+
 function authenticateUser() {
   return new Promise((resolve, reject) => {
     chrome.identity.getAuthToken({ interactive: true }, (token) => {
@@ -124,6 +154,7 @@ document.getElementById("docs-dropdown").addEventListener("focus", async () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+
     const tabs = {
       requirements: document.getElementById("requirements-tab"),
       checklist: document.getElementById("checklist-tab"),
@@ -137,10 +168,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   
     const dropZone = document.getElementById("drop-zone");
+    const pasteZone = document.getElementById("paste-zone");
+    const uploadButton = document.getElementById("upload-button");
+
     const docsDropdown = document.getElementById("docs-dropdown");
-  
+
+    // Add event listener to the "clear file" button
+    document.getElementById("clear-file-button").addEventListener("click", clearFileUpload);
+
     // Retrieve stored data
-    chrome.storage.local.get(["uploadedFile", "selectedDoc", "activeTab"], (result) => {
+    chrome.storage.local.get(["uploadedFile", "pastedInstructions", "selectedDoc", "activeTab"], (result) => {
       let hasUploadedFile = false;
       let hasSelectedDoc = false;
   
@@ -151,12 +188,37 @@ document.addEventListener("DOMContentLoaded", () => {
         hasUploadedFile = true;
   
         dropZone.innerHTML = `
-          <p><strong>Uploaded:</strong> ${name}</p>
-          <span>To replace this file, drop another file here or click anywhere to browse files</span>
+            <span><h3><strong>Uploaded:</strong> ${name}</h3></span>
+            <span>To replace this file, drop another file here or click anywhere to browse files</span>
+            <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+        `;
+        // Re-attach event listeners to the new file input
+        reinitializeFileInput();
+        const clearButton = document.getElementById("clear-file-button");    
+        clearButton.style.display = "inline-block";
+        enableTabs();
+        uploadButton.disabled = false;
+      }
+
+      else {}
+
+      if (result.pastedInstructions) {
+        const instructions = result.pastedInstructions;
+        pasteZone.value = instructions;
+        console.log("Restored pasted instructions:", instructions);
+        hasUploadedFile = true;
+        enableTabs();
+        uploadButton.disabled = false;
+      }
+
+      if (!result.uploadedFile && !result.pastedInstructions) {
+        dropZone.innerHTML = `
+          <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
           <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
         `;
         reinitializeFileInput();
-        enableTabs(tabs);
+        disableTabs();
+        uploadButton.disabled = true;
       }
   
       // Restore selected document
@@ -174,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
       // Enable tabs if both file and document are present
     //   if (hasUploadedFile && hasSelectedDoc) {
-    //     enableTabs(tabs);
+    //     enableTabs();
     //   }
   
       // Restore the active tab
@@ -211,15 +273,67 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+
+    setupDragAndDrop(); // important!
+    setupTextInput(); // important!
+
   });
 
-    // Function to enable tabs
-    function enableTabs(tabs) {
-        tabs.checklist.disabled = false;
-        tabs.finalChecklist.disabled = false;
-    }
+// Function to enable tabs
+function enableTabs() {
+    const tabs = {
+        requirements: document.getElementById("requirements-tab"),
+        checklist: document.getElementById("checklist-tab"),
+        finalChecklist: document.getElementById("final-checklist-tab"),
+      };
+    tabs.checklist.disabled = false;
+    tabs.finalChecklist.disabled = false;
+}
 
-  function reinitializeFileInput() {
+// Function to disable tabs
+function disableTabs() {
+    const tabs = {
+        requirements: document.getElementById("requirements-tab"),
+        checklist: document.getElementById("checklist-tab"),
+        finalChecklist: document.getElementById("final-checklist-tab"),
+      };
+    tabs.checklist.disabled = true;
+    tabs.finalChecklist.disabled = true;
+}
+
+function setupTextInput() {
+    const pasteZone = document.getElementById("paste-zone");
+    const uploadButton = document.getElementById("upload-button");
+  
+    // Monitor textarea for input
+    pasteZone.addEventListener("input", () => {
+        console.log("inside event listener");
+      const instructions = pasteZone.value.trim();
+      chrome.storage.local.set({ pastedInstructions: instructions }, () => {
+        console.log("Pasted instructions saved to storage: ", instructions);
+      });
+      if (instructions.length > 0) {
+        // Save instructions to storage
+        
+        const uploadButton = document.getElementById("upload-button");
+        uploadButton.disabled = false;
+
+      } else {
+        console.log("Textarea emptied.");
+        chrome.storage.local.remove("pastedInstructions", () => {
+          console.log("Pasted instructions removed from storage.");
+        });
+        chrome.storage.local.get("uploadedFile", (result) => {
+            if (!result.uploadedFile) {
+              uploadButton.disabled = true;
+              disableTabs();
+            }
+        });
+      }
+    });
+}
+
+function reinitializeFileInput() {
     const fileInput = document.getElementById("file-input");
   
     fileInput.addEventListener("change", (e) => {
@@ -243,6 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     dropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
+      dro
       dropZone.classList.add("dragover");
     });
   
@@ -264,23 +379,91 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleFileUpload(file) {
+    
     console.log(`File uploaded: ${file.name}`);
-  
-    // Save file info to storage
-    chrome.storage.local.set({ uploadedFile: { name: file.name } }, () => {
-      console.log("Uploaded file info saved to storage.");
-    });
-  
+
+    if (file.type === "application/pdf") {
+        // Handle PDF files
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+        const arrayBuffer = e.target.result;
+
+        try {
+            // Use PDF.js to extract text
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            console.log(`PDF loaded: ${pdf.numPages} pages`);
+
+            let pdfText = "";
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item) => item.str).join(" ");
+            pdfText += `${pageText}\n`;
+            }
+
+            console.log("Extracted Text:", pdfText);
+
+            // Save the extracted text to storage
+            chrome.storage.local.set(
+            {
+                uploadedFile: {
+                name: file.name,
+                type: file.type,
+                content: pdfText.trim(),
+                },
+            },
+            () => {
+                console.log("Extracted text from PDF saved to storage.");
+            }
+            );
+        } catch (error) {
+            console.error("Failed to extract text from PDF:", error);
+        }
+        };
+
+        reader.readAsArrayBuffer(file); // Read the file as ArrayBuffer
+    } else if (file.type === "text/plain") {
+        // Handle plain text files
+        const reader = new FileReader();
+        reader.onload = (e) => {
+        const fileContent = e.target.result;
+
+        chrome.storage.local.set(
+            {
+            uploadedFile: {
+                name: file.name,
+                type: file.type,
+                content: fileContent.trim(),
+            },
+            },
+            () => {
+            console.log("Uploaded file and content saved to storage.");
+            }
+        );
+        };
+
+        reader.readAsText(file);
+    } else {
+        console.error("Unsupported file type. Please upload a PDF or plain text file.");
+        return;
+    }
     const dropZone = document.getElementById("drop-zone");
+    // Update the drop zone content with the uploaded file and "x" button
     dropZone.innerHTML = `
-      <p><strong>Uploaded:</strong> ${file.name}</p>
-      <span>To replace this file, drop another file here or click anywhere to browse files</span>
-      <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+    <div class="uploaded-file">
+        <h3><strong>Uploaded:</strong> ${file.name}</h3>
+    </div>
+    <span>To replace this file, drop another file here or click anywhere to browse files</span>
+    <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
     `;
-  
+
+    const clearButton = document.getElementById("clear-file-button");    
+    clearButton.style.display = "inline-block";
+
     // Re-attach event listeners to the new file input
     reinitializeFileInput();
-  
+
     // Enable the upload button
     const uploadButton = document.getElementById("upload-button");
     uploadButton.disabled = false;
@@ -293,6 +476,37 @@ document.addEventListener("DOMContentLoaded", () => {
       "text/plain",
     ];
     return file && validTypes.includes(file.type);
+  }
+
+  function clearFileUpload() {
+    console.log("Clearing uploaded file...");
+  
+    // Remove the uploaded file from storage
+    chrome.storage.local.remove("uploadedFile", () => {
+      console.log("Uploaded file info removed from storage.");
+    });
+  
+    // Reset the drop zone content
+    const dropZone = document.getElementById("drop-zone");
+    dropZone.innerHTML = `
+      <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
+      <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+    `;
+
+    const clearButton = document.getElementById("clear-file-button");
+    clearButton.style.display = "none";
+  
+    // Re-attach event listeners to the new file input
+    reinitializeFileInput();
+  
+    // Disable the upload button if no pasted instructions exist
+    chrome.storage.local.get("pastedInstructions", (result) => {
+      const uploadButton = document.getElementById("upload-button");
+      if (!result.pastedInstructions) {
+        uploadButton.disabled = true;
+        disableTabs();
+      }
+    });
   }
 
   document.getElementById("upload-button").addEventListener("click", () => {
@@ -309,8 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   
     // Enable checklist and final checklist tabs
-    tabs.checklist.disabled = false;
-    tabs.finalChecklist.disabled = false;
+    enableTabs();
   
     // Switch to checklist tab
     Object.keys(tabs).forEach((key) => {
@@ -322,6 +535,9 @@ document.addEventListener("DOMContentLoaded", () => {
         views[key].classList.remove("active");
       }
     });
+
+    // Generate checklist of requirements
+    generateChecklist();
   
     // Persist the active tab
     chrome.storage.local.set({ activeTab: "checklist" }, () => {
@@ -350,7 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     // Reset drop-zone content
     dropZone.innerHTML = `
-      <span>Drop your files here or click anywhere to browse files</span>
+      <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
       <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
     `;
     reinitializeFileInput();
@@ -386,4 +602,55 @@ document.addEventListener("DOMContentLoaded", () => {
   
     console.log("Interface reset.");
   }
+
+
+// Generate checklist by merging both requirements inputs
+function generateChecklist() {
+    chrome.storage.local.get(["pastedInstructions", "uploadedFile"], async (result) => {
+        const pastedInstructions = result.pastedInstructions || "";
+        const fileContent = result.uploadedFile?.content || ""; // Retrieve the stored file content
+    
+        const combinedInput = `${pastedInstructions}\n\n${fileContent}`;
+        console.log("Generating checklist from combined input:", combinedInput);
   
+    //   // OpenAI API Configuration
+    //   const openaiApiKey = "YOUR_KEY"; // Replace with your OpenAI API key
+    //   const apiUrl = "https://api.openai.com/v1/completions";
+    //   const prompt = `Extract a detailed checklist of requirements from the following assignment instructions:\n\n${combinedInput}`;
+  
+    //   // API Request Body
+    //   const requestBody = {
+    //     model: "text-davinci-003", // Ensure the model fits your needs
+    //     prompt: prompt,
+    //     max_tokens: 500, // Adjust as needed
+    //     temperature: 0.7, // Adjust based on required creativity
+    //   };
+  
+    //   try {
+    //     // Send Request to OpenAI API
+    //     const response = await fetch(apiUrl, {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json",
+    //         Authorization: `Bearer ${openaiApiKey}`,
+    //       },
+    //       body: JSON.stringify(requestBody),
+    //     });
+  
+    //     // Handle Response
+    //     if (!response.ok) {
+    //       throw new Error(`OpenAI API error: ${response.statusText}`);
+    //     }
+  
+    //     const data = await response.json();
+    //     const checklist = data.choices[0]?.text?.trim() || "No checklist generated.";
+  
+    //     // Print Checklist
+    //     console.log("Generated Checklist:", checklist);
+    //   } catch (error) {
+    //     console.error("Error generating checklist:", error);
+    //   }
+    });
+  }
+  
+

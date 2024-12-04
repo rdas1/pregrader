@@ -27,13 +27,14 @@
             <h2>Upload Requirements</h2>
             <h4>Upload or paste your assignment instructions to get started.</h4>
             <div class="upload-area">
-                <!-- Drop Zone for File Upload -->
                 <div id="drop-zone" class="drop-zone">
-                <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
-                <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+                    <span><b>Drop your file</b> here.<br><br>Or, click anywhere to <b>browse files.</b></span>
+                    <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
                 </div>
-                <textarea class="paste-zone" placeholder="Or, paste your assignment instructions here..." class="text-input"></textarea>
-                <button id="upload-button" disabled>Upload</button>
+                <button id="clear-file-button" style="display: none;">Clear file</button>
+
+                <textarea id="paste-zone" placeholder="Or, paste your assignment instructions here..." class="text-input"></textarea>
+                <button id="upload-button" disabled>Check Progress</button>
             </div>
         </div>
 
@@ -59,6 +60,7 @@
         </div>
         </div>
     </div>
+  <script src="libs/pdf.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
