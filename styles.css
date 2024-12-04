@@ -5,10 +5,24 @@ body {
     padding: 0;
 }
 
+/* Title Bar Styles */
+#title-bar {
+    width: 100%;
+    padding: 4px 10px;
+    background-color: #007BFF; /* Bright blue background */
+    color: white; /* White text */
+    /* font-size: 20px; */
+    font-weight: bold;
+    text-align: center; /* Center the text */
+    border-bottom: 2px solid #0056b3; /* Add a subtle border for separation */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a slight shadow for depth */
+    text-align: left;
+}
+
 #extension-container {
     width: 350px;
     padding: 15px;
-    background-color: #f9f9f9;
+    background-color: #eeeeee;
     border: 1px solid #ccc;
     border-radius: 8px;
 }

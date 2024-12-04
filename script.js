@@ -137,6 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   
     const dropZone = document.getElementById("drop-zone");
+    const docsDropdown = document.getElementById("docs-dropdown");
   
     // Retrieve stored data
     chrome.storage.local.get(["uploadedFile", "selectedDoc", "activeTab"], (result) => {
@@ -154,25 +155,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>To replace this file, drop another file here or click anywhere to browse files</span>
           <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
         `;
-
-        // Re-attach event listeners to the new file input
         reinitializeFileInput();
-
-        const uploadButton = document.getElementById("upload-button");
-        uploadButton.disabled = false; // Enable the upload button
-
+        enableTabs(tabs);
       }
-
-      // Add event listeners for drag-and-drop functionality
-      setupDragAndDrop();
-
-      // Restore selected doc
+  
+      // Restore selected document
       if (result.selectedDoc) {
         const { id, name } = result.selectedDoc;
         console.log(`Restored selected doc: ${name} (ID: ${id})`);
         hasSelectedDoc = true;
   
-        const docsDropdown = document.getElementById("docs-dropdown");
         const option = document.createElement("option");
         option.value = id;
         option.text = name;
@@ -180,10 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
         docsDropdown.appendChild(option);
       }
   
-      // Enable tabs if both file and doc are present
-      if (hasUploadedFile && hasSelectedDoc) {
-        enableTabs(tabs);
-      }
+      // Enable tabs if both file and document are present
+    //   if (hasUploadedFile && hasSelectedDoc) {
+    //     enableTabs(tabs);
+    //   }
   
       // Restore the active tab
       const activeTab = result.activeTab || "requirements"; // Default to requirements tab
@@ -220,12 +212,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   });
-  
-  // Function to enable all tabs
-  function enableTabs(tabs) {
-    tabs.checklist.disabled = false;
-    tabs.finalChecklist.disabled = false;
-  }
+
+    // Function to enable tabs
+    function enableTabs(tabs) {
+        tabs.checklist.disabled = false;
+        tabs.finalChecklist.disabled = false;
+    }
 
   function reinitializeFileInput() {
     const fileInput = document.getElementById("file-input");
