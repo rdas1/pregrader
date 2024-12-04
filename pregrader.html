@@ -35,12 +35,15 @@
       <!-- Checklist View -->
       <div id="checklist-view" class="view">
         <h2>Progress Report</h2>
-        <p>Overall Progress: <strong id="progress-percentage">0%</strong> of requirements met.</p>
+        <select id="docs-dropdown" class="docs-dropdown">
+            <option value="" disabled selected>Select a Google Doc</option>
+            <option value="" disabled>Loading...</option>
+        </select>
+        <h4>Overall Progress: <strong id="progress-percentage">0%</strong> of requirements met.</h4>
         <div id="section-checklist">
-          <!-- Progress bar placeholder -->
+        <!-- Progress bar placeholder -->
         </div>
       </div>
-
       <!-- Final Checklist View -->
       <div id="final-checklist-view" class="view">
         <h2>Final Checklist</h2>

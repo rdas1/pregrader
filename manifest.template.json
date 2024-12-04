@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Pre-Grader Extension",
+    "description": "Pregrades Google Docs homework assignments using rubric and OpenAI",
+    "version": "1.0",
+    "permissions": [
+        "identity",
+        "storage"
+      ],
+      "oauth2": {
+        "client_id": "YOUR_CLIENT_ID", 
+        "scopes": [
+          "https://www.googleapis.com/auth/documents.readonly",
+          "https://www.googleapis.com/auth/drive.readonly"
+        ]
+      },
+    "action": {
+      "default_popup": "pregrader.html",
+      "default_icon": "icon.png"
+    },
+    "background": {
+        "service_worker": "service-worker.js"
+    }
+  }
