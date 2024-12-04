@@ -154,8 +154,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>To replace this file, drop another file here or click anywhere to browse files</span>
           <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
         `;
+
+        // Re-attach event listeners to the new file input
+        reinitializeFileInput();
+
+        const uploadButton = document.getElementById("upload-button");
+        uploadButton.disabled = false; // Enable the upload button
+
       }
-  
+
+      // Add event listeners for drag-and-drop functionality
+      setupDragAndDrop();
+
       // Restore selected doc
       if (result.selectedDoc) {
         const { id, name } = result.selectedDoc;
@@ -216,3 +226,172 @@ document.addEventListener("DOMContentLoaded", () => {
     tabs.checklist.disabled = false;
     tabs.finalChecklist.disabled = false;
   }
+
+  function reinitializeFileInput() {
+    const fileInput = document.getElementById("file-input");
+  
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (validateFile(file)) {
+        handleFileUpload(file);
+      } else {
+        console.log("Invalid file type. Please upload a PDF, DOCX, or TXT file.");
+      }
+    });
+  }
+
+  function setupDragAndDrop() {
+    const dropZone = document.getElementById("drop-zone");
+    const uploadButton = document.getElementById("upload-button");
+  
+    dropZone.addEventListener("click", () => {
+      const fileInput = document.getElementById("file-input");
+      fileInput.click(); // Trigger the hidden file input
+    });
+  
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+  
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragover");
+    });
+  
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+  
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && validateFile(files[0])) {
+        handleFileUpload(files[0]);
+      } else {
+        console.log("Invalid file type. Please upload a PDF, DOCX, or TXT file.");
+      }
+    });
+  }
+
+  function handleFileUpload(file) {
+    console.log(`File uploaded: ${file.name}`);
+  
+    // Save file info to storage
+    chrome.storage.local.set({ uploadedFile: { name: file.name } }, () => {
+      console.log("Uploaded file info saved to storage.");
+    });
+  
+    const dropZone = document.getElementById("drop-zone");
+    dropZone.innerHTML = `
+      <p><strong>Uploaded:</strong> ${file.name}</p>
+      <span>To replace this file, drop another file here or click anywhere to browse files</span>
+      <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+    `;
+  
+    // Re-attach event listeners to the new file input
+    reinitializeFileInput();
+  
+    // Enable the upload button
+    const uploadButton = document.getElementById("upload-button");
+    uploadButton.disabled = false;
+  }
+
+  function validateFile(file) {
+    const validTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ];
+    return file && validTypes.includes(file.type);
+  }
+
+  document.getElementById("upload-button").addEventListener("click", () => {
+    const tabs = {
+      requirements: document.getElementById("requirements-tab"),
+      checklist: document.getElementById("checklist-tab"),
+      finalChecklist: document.getElementById("final-checklist-tab"),
+    };
+  
+    const views = {
+      requirements: document.getElementById("requirements-view"),
+      checklist: document.getElementById("checklist-view"),
+      finalChecklist: document.getElementById("final-checklist-view"),
+    };
+  
+    // Enable checklist and final checklist tabs
+    tabs.checklist.disabled = false;
+    tabs.finalChecklist.disabled = false;
+  
+    // Switch to checklist tab
+    Object.keys(tabs).forEach((key) => {
+      if (key === "checklist") {
+        tabs[key].classList.add("active");
+        views[key].classList.add("active");
+      } else {
+        tabs[key].classList.remove("active");
+        views[key].classList.remove("active");
+      }
+    });
+  
+    // Persist the active tab
+    chrome.storage.local.set({ activeTab: "checklist" }, () => {
+      console.log("Active tab set to: checklist");
+    });
+  });
+
+
+  document.getElementById("clear-storage-button").addEventListener("click", () => {
+    chrome.storage.local.clear(() => {
+      if (chrome.runtime.lastError) {
+        console.error("Error clearing storage:", chrome.runtime.lastError);
+      } else {
+        console.log("Storage cleared successfully.");
+        // Optionally reset the interface
+        resetInterface();
+      }
+    });
+  });
+  
+  // Function to reset the interface after clearing storage (for testing)
+  function resetInterface() {
+    const dropZone = document.getElementById("drop-zone");
+    const docsDropdown = document.getElementById("docs-dropdown");
+    const uploadButton = document.getElementById("upload-button");
+  
+    // Reset drop-zone content
+    dropZone.innerHTML = `
+      <span>Drop your files here or click anywhere to browse files</span>
+      <input type="file" id="file-input" hidden accept=".pdf,.docx,.txt" />
+    `;
+    reinitializeFileInput();
+  
+    // Reset dropdown
+    docsDropdown.innerHTML = `<option value="" disabled selected>Loading Google Docs...</option>`;
+    docsDropdown.disabled = true;
+  
+    // Disable upload button
+    uploadButton.disabled = true;
+  
+    // Reset tabs
+    const tabs = {
+      requirements: document.getElementById("requirements-tab"),
+      checklist: document.getElementById("checklist-tab"),
+      finalChecklist: document.getElementById("final-checklist-tab"),
+    };
+    Object.keys(tabs).forEach((key) => {
+      tabs[key].classList.remove("active");
+      tabs[key].disabled = key !== "requirements"; // Only enable the requirements tab
+    });
+  
+    // Reset active tab view
+    const views = {
+      requirements: document.getElementById("requirements-view"),
+      checklist: document.getElementById("checklist-view"),
+      finalChecklist: document.getElementById("final-checklist-view"),
+    };
+    Object.keys(views).forEach((key) => {
+      views[key].classList.remove("active");
+    });
+    views.requirements.classList.add("active");
+  
+    console.log("Interface reset.");
+  }
+  
